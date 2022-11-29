@@ -44,20 +44,20 @@ int k; //length of all string
 
 //LIST METHODS:
 
-nodeList* add(int x, nodeList* testa) {
+nodeList* add(int x, nodeList** testa) {
 
-    if(testa != NULL){
-        nodeList* succ = testa;
-        testa = (nodeList*)malloc(sizeof(node));
-        testa -> val = x;
-        testa -> next = succ;
+    if((*testa) != NULL){
+        nodeList* succ = (*testa);
+        (*testa) = (nodeList*)malloc(sizeof(nodeList));
+        (*testa) -> val = x;
+        (*testa) -> next = succ;
     }
     else {
-        testa = (nodeList*)malloc(sizeof(node));
-        testa -> val = x;
-        testa -> next = NULL;
+        (*testa) = (nodeList*)malloc(sizeof(nodeList));
+        (*testa) -> val = x;
+        (*testa) -> next = NULL;
     }
-    return testa;
+    return (*testa);
 }
 
 void printList(nodeList *testa) {
@@ -303,8 +303,8 @@ void stampeFiltrate(){
  * @param rString first string r (reference)
  * @param pString second string p (it change every time)
  */
-void match(char* rString, char* pString, int *noCharBroadcast, int *yesCharIdx,
-           int *noCharIdx, int *minOccChar, int *perfectOccChar){
+void match(char* rString, char* pString, int noCharBroadcast[], int yesCharIdx[],
+           nodeList* noCharIdx[], int minOccChar[], int perfectOccChar[]){
 
     int index;
 
@@ -332,35 +332,57 @@ void match(char* rString, char* pString, int *noCharBroadcast, int *yesCharIdx,
         if(pString[i] == rString[i]) {
             res[i] = '+';
             rC[index]++;
-            yesCharIdx[index]++;
         }
     }
 
     for(i = 0; i < k; i++) {
 
-        int indexOfChar = (int)pString[i];
+        int indexOfPStr = (int)pString[i];
+        int indexOfRes = (int)res[i];
 
-        if(res[i] == '+')
+        if(res[i] == '+'){
+            yesCharIdx[index]++;
             continue;
-        else if(rN[indexOfChar] == 0) {
+        } else if(rN[indexOfPStr] == 0) {
             //character not present in r
             //if(rN[(int)pString[i] == 0): res[i] = '/'
             res[i] = '/';
+            noCharBroadcast[indexOfRes]++;
 
-        } else if(rN[indexOfChar] - rC[indexOfChar] > rX[indexOfChar]) {
+        } else if(rN[indexOfPStr] - rC[indexOfPStr] > rX[indexOfPStr]) {
             //character present in r but not in the correct position
             //if(rN - rC > rX): res[i] = '|'
             res[i] = '|';
-            rX[indexOfChar]++;
+            rX[indexOfPStr]++;
+            minOccChar[indexOfRes]++;
+            add(indexOfRes, &noCharIdx[i]);
 
-        } else if(rN[indexOfChar] - rC[indexOfChar] <= rX[indexOfChar]) {
+        } else if(rN[indexOfPStr] - rC[indexOfPStr] <= rX[indexOfPStr]) {
             //if(rN - rC <= rX): res[i] = '/'
             res[i] = '/';
-            rX[indexOfChar]++;
+            rX[indexOfPStr]++;
+            add(indexOfRes, &noCharIdx[i]);
+            perfectOccChar[indexOfRes] = rN[indexOfPStr] - rC[indexOfPStr];
         }
     }
 
     printf("res = %s\n", res);
+
+}
+
+void initializeConstraintsStruct(int noCharBroadcast[], int minOccChar[], int perfectOccChar[],
+    int yesCharIdx[], nodeList* noCharIdx[]) {
+
+    for(int i = 0; i < k; i++) {
+        yesCharIdx[i] = 0;
+        noCharIdx[i] = NULL;
+    }
+
+    for(int i = 0; i < ASCII_TABLE_SIZE; i++) {
+        noCharBroadcast[i] = 0;
+        minOccChar[i] = 0;
+        perfectOccChar[i] = 0;
+    }
 
 }
 
@@ -399,7 +421,7 @@ int main() {
     k = strtol(fgets(bufferK, DIM_BUFFER_K, stdin), NULL, BASE_10);
 
     //LOCAL VARIABLES DEPENDENT FROM K:
-    nodeList* yesCharIdx[k];
+    int yesCharIdx[k];
     nodeList* noCharIdx[k];
     //int yesCharIdx[ASCII_TABLE_SIZE];
     //END LOCAL VARIABLES DECLARATIONS
@@ -473,7 +495,8 @@ int main() {
             //"+nuova_partita" => newMatch = 1
             if (buffer[0] == '+' && buffer[1] == 'n') {
                 newMatch = 1;
-                initializeConstraintsStruct();
+                initializeConstraintsStruct(noCharBroadcast, minOccChar, perfectOccChar, 
+                    yesCharIdx, noCharIdx);
 
             //"+inserisci_inizio" begins the insert of new admissible words
             } else if (buffer[0] == '+' && buffer[1] == 'i' && buffer[16] == 'o'){
@@ -513,7 +536,7 @@ int main() {
                     if(!strcmp(rString, pString))
                         printf("ok\n");
                     else
-                        match(rString, pString, noCharBroadcast, yesCharIdx, noCharIdx, minOccChar, perfectOccChar);
+                        match(rString, pString, noCharBroadcast, yesCharIdx, noCharIdx, minOccChar, perfectOccChar);//TODO
                else
                    printf("not_exists\n");
 
