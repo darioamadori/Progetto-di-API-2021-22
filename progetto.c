@@ -26,7 +26,6 @@
  * char str*: string of length k
  * node *left: pointer to left subtree (contains only nodes with str lesser than the node’s str)
  * node *right: pointer to right subtree (contains only nodes with str bigger than the node’s str)
- * node *p: pointer to father node
  * node *next: pointer to the next node who respects the constraints learned so far
  */
 struct node {
@@ -36,6 +35,13 @@ struct node {
     struct node *next;
 };
 
+/**
+ * nodeDict is used to store value with key and value (constraints)
+ * char key: the letter or number or - , _
+ * int val: the number of occurences of key
+ * node *right
+ * node *left
+ */
 struct nodeDict {
     char key;
     int val;
@@ -43,6 +49,12 @@ struct nodeDict {
     struct nodeDict *right;
 };
 
+/**
+ * simpleNode is used to store value with only key
+ * char key: the letter or number or - , _
+ * node *right
+ * node *left
+ */
 struct simpleNode {
     char key;
     struct simpleNode *left;
@@ -57,6 +69,18 @@ int isFindGlobalPointer; // used to find globalPointer for the first time
 int k; //length of all string
 int stop; //TODO
 /******* SIMPLE NODE METHODS *******************************************************************************/
+
+// it returns 0 if the string are equals
+int myStrnCmp(char* str1, char* str2) {
+
+    for (int i = 0; i < k; i++) {
+        if (str1[i] != str2[i])
+            return 1;
+    }
+
+    return 0;
+
+}
 
 struct simpleNode* simpleNodeSearch(struct simpleNode* simpleNode, char charKey) {
 
@@ -127,20 +151,24 @@ void deallocateSimpleNode(struct simpleNode* node) {
  * @param s2 second string
  * @return 1 if s1 > s2, 0 if s1 < s2, -1 if error occurred
  */
-int stringComparison(char** firstStr, char** secondStr){
-    char str1[k + 1];
-    char str2[k + 1];
-    strncpy(str1, *firstStr, k);
-    strncpy(str2, *secondStr, k);
+int stringComparison(char* str1, char* str2){
+    // char str1[k + 1];
+    // char str2[k + 1];
 
-    int index;
+    // strncpy(str1, *firstStr, k);
+    // strncpy(str2, *secondStr, k);
+
+    int i;
     //the lengths of s1 and s2 are always equals
-    for(index = 0; index < k; index++){
-        if(str1[index] > str2[index])
+    for(i = 0; i < k; i++){
+
+        if (str1[i] > str2[i])
             return 1;
-        else if(str2[index] > str1[index])
+        else if (str2[i] > str1[i])
             return 0;
+
     }
+
     return -1;
 }
 
@@ -154,10 +182,10 @@ struct node* treeSearch(struct node** root, char** str){
     if(*root == NULL)
         return NULL;
     //strncmp returns 0 if the strings are equals
-    if(!strncmp(*str, (*root)->str, k))
+    if(!myStrnCmp(*str, (*root)->str))
         return *root;
     //if str < x->str
-    if(!stringComparison(str, &(*root)->str))
+    if(!stringComparison(*str, (*root)->str))
         return treeSearch(&(*root)->left, str);
     else
         return treeSearch(&(*root)->right, str);
@@ -270,6 +298,9 @@ struct node* treeInsert(struct node** root, char* strToInsert, int nextValue){
     struct node* nodeToInsert = (struct node*)malloc(sizeof(struct node));
     nodeToInsert->str = str;
 
+    if(nextValue == 1)
+        nodeToInsert->next = (struct node*)-1;
+
     nodeToInsert->right = NULL;
     nodeToInsert->left = NULL;
 
@@ -281,7 +312,7 @@ struct node* treeInsert(struct node** root, char* strToInsert, int nextValue){
         fatherOfNodeToInsert = iterableNode;
 
         //if ( iterableNode->str > nodeToInsert->str )
-        if(stringComparison(&iterableNode->str, &nodeToInsert->str))
+        if(stringComparison(iterableNode->str, nodeToInsert->str))
             iterableNode = iterableNode->left;
         else
             iterableNode = iterableNode->right;
@@ -293,7 +324,7 @@ struct node* treeInsert(struct node** root, char* strToInsert, int nextValue){
     if(fatherOfNodeToInsert == NULL){
         return nodeToInsert;
         //if nodeToInsert is less than father
-    }else if(stringComparison(&fatherOfNodeToInsert->str, &nodeToInsert->str)){
+    }else if(stringComparison(fatherOfNodeToInsert->str, nodeToInsert->str)){
         fatherOfNodeToInsert->left = nodeToInsert;
         //if nodeToInsert is greater than father
     }else {
@@ -837,7 +868,7 @@ int main() {
                 //"+stampa_filtrate", print out all the compatible words, from next
             } else if (buffer[0] == '+' && buffer[1] == 's') {
 
-                checkLinkedList(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
+                // checkLinkedList(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
                 stampeFiltrate();
 
                 //between "+inserisci_inizio" and "+inserisci_fine"
@@ -853,7 +884,8 @@ int main() {
                 pString[k] = '\0';
 
                 if(treeSearch(&root, &pString) != 0){// 0 or NULL TODO
-                    if(!strncmp(rString, pString, k))
+                    // if(!strncmp(rString, pString, k))
+                    if (!myStrnCmp(rString, pString))
                         printf("ok\n");
                     else {
                         match(rN, rC, rX, minOccCharCur, rString, pString, &minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
