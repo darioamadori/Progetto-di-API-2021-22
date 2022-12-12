@@ -496,19 +496,18 @@ int singleCheck(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcas
 
     /*------------------------------------
     Constraints (from stronger to weaker)
-    try to chage this order to do better times
+    try to chage this order to do better times TODO
     1) yesCharIdx
     2) perfectOccChar
     3) minOccChar
     4) noCharBroadcast
     5) noCharIdx
     ------------------------------------*/
-    
+
     // yesCharIdx[]
     for (i = 0; i < k && !stop; i++) {
 
         curChar = str[i];
-
         if (yesCharIdx[i] != -1 && yesCharIdx[i] != (int)curChar)
             return 1;
 
@@ -518,30 +517,33 @@ int singleCheck(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcas
     walkPerfectOccChar(perfectOccChar, str);
     if (stop == 1)
         return 1;
-
-    // minOccChar[]
-    walkMinOccChar(minOccChar, str);
-    if (stop == 1)
-        return 1;
+    
 
     // noCharIdx[]
     for (i = 0; i < k && !stop; i++) {
         
         curChar = str[i];
-
         if (simpleNodeSearch(noCharIdx[i], curChar) != NULL)
             return 1;
 
     }
 
+    // minOccChar[]
+    walkMinOccChar(minOccChar, str);
+    if (stop == 1)
+        return 1;
+        
+
+
+
     // noCharBroadcast
     for (i = 0; i < k && !stop; i++) {
 
         curChar = str[i];
-
         if (simpleNodeSearch(*noCharBroadcast, curChar) != NULL)
             return 1;
     }
+
     return 0;
 }
 
@@ -914,3 +916,10 @@ int main() {
 
     return 0;
 }
+
+/** TODO:
+ * 1) creare variabili global isFirst di tutte le strutture dati per i vincoli
+ * 2) cambiare sequenza check in singlecheck
+ * 3) verificare se si rientra nei limiti di memoria (se no allocare in blocchi)
+ * 4) vedere con valgrind dov'è il bottle neck, ragionarci e provare a velocizzarlo
+*/
