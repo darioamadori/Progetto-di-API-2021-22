@@ -29,78 +29,93 @@
  * node *p: pointer to father node
  * node *next: pointer to the next node who respects the constraints learned so far
  */
-struct node{
+struct node {
     char *str;
     struct node *left;
     struct node *right;
     struct node *next;
 };
 
-/**
- * This struct is used to create a node for the list
- * int val: integer value of the node
- * struct nodeList* next: pointer to the next node of the list
- */
-typedef struct nodeList{
+struct nodeDict {
+    char key;
     int val;
-    struct nodeList *next;
-} nodeList;
+    struct nodeDict *left;
+    struct nodeDict *right;
+};
+
+struct simpleNode {
+    char key;
+    struct simpleNode *left;
+    struct simpleNode *right;
+};
+
 
 /******* GLOBAL VARIABLES ************************************************************************/
 int numberOfAddedNodes = 0; // numberOfAddedNodes to create array to fill node->next
 struct node* globalPointerToFirstAdmissibleNode; // address of first element of admissible List
 int isFindGlobalPointer; // used to find globalPointer for the first time
 int k; //length of all string
+int stop; //TODO
+/******* SIMPLE NODE METHODS *******************************************************************************/
 
-/******* LIST METHODS ****************************************************************************/
+struct simpleNode* simpleNodeSearch(struct simpleNode* simpleNode, char charKey) {
 
-/**
- * add method is used to insert new element into the list
- * @param x: value of new element to insert
- * @param head: pointer to the first element of the list (head of the list)
- * @return: the pointer of the new list with the new element inside it
-*/
-nodeList* add(int x, nodeList** head) {
+    if(simpleNode == NULL)
+        return NULL;
 
-    if((*head) != NULL) {
-        nodeList* mom = (*head);
-        (*head) = (nodeList*)malloc(sizeof(nodeList));
-        (*head) -> val = x;
-        (*head) -> next = mom;
-    } else {
-        (*head) = (nodeList*)malloc(sizeof(nodeList));
-        (*head) -> val = x;
-        (*head) -> next = NULL;
-    }
+    if(simpleNode->key == charKey)
+        return simpleNode;
 
-    return (*head);
+    if(charKey < simpleNode->key)
+        return simpleNodeSearch(simpleNode->left, charKey);
+    else
+        return simpleNodeSearch(simpleNode->right, charKey);
 
 }
 
-/**
- * printList is the method used to print all the elements of the list
- * @param head: pointer to the list
-*/
-void printList(struct node *head) {
+struct simpleNode* simpleNodeInsert(struct simpleNode** root, char keyChar){
 
-    if (head != NULL) {
+    struct simpleNode* nodeToInsert = (struct simpleNode*)malloc(sizeof(struct simpleNode));
+    nodeToInsert->key = keyChar;
 
-        printf("Head -> ");
+    nodeToInsert->right = NULL;
+    nodeToInsert->left = NULL;
 
-        while(head != NULL){
+    struct simpleNode* fatherOfNodeToInsert = NULL;
+    struct simpleNode* iterableNode = *root;
 
-            if(head->next != -1) {
-                printf("%s -> ", head->str);
-                head = head -> next;
-            } else {
-                printf("questo:%s", head->str);
-                head = NULL;
-            }
-        }
+    while(iterableNode != NULL){
 
-        printf("NULL\n");
+        fatherOfNodeToInsert = iterableNode;
+
+        if(iterableNode->key == nodeToInsert->key)
+            return *root;
+        else if(iterableNode->key > nodeToInsert->key)
+            iterableNode = iterableNode->left;
+        else
+            iterableNode = iterableNode->right;
+
+    }
+
+    if (fatherOfNodeToInsert == NULL) {
+        return nodeToInsert;
+        //if nodeToInsert is less than father
+    } else if (nodeToInsert->key < fatherOfNodeToInsert->key) {
+        fatherOfNodeToInsert->left = nodeToInsert;
+        //if nodeToInsert is greater than father
     } else {
-        printf("empty list\n");
+        fatherOfNodeToInsert->right = nodeToInsert;
+    }
+
+    return *root;
+}
+
+void deallocateSimpleNode(struct simpleNode* node) {
+
+    if(node != NULL) {
+        deallocateSimpleNode(node->left);
+        free(node);
+        deallocateSimpleNode(node->right);
     }
 }
 
@@ -155,11 +170,8 @@ struct node* treeSearch(struct node** root, char** str){
 void inorderTreeWalk(struct node** currentNode){
     if (*currentNode != NULL) {
         inorderTreeWalk(&(*currentNode) -> left);
-        //printf("%s , %ld \n", (*currentNode) -> str, (*currentNode));
-        printf("%s, address = %ld, next = %ld\n", (*currentNode) -> str, (*currentNode), (*currentNode)->next);
         inorderTreeWalk(&(*currentNode) -> right);
     }
-
 }
 
 /**
@@ -199,7 +211,7 @@ void updateNextField(struct node** currentNode, struct node** predecessor){
         updateNextField(&(*currentNode) -> left, predecessor);
         struct node *momNode = *currentNode;
 
-        if(momNode->next != -1) {
+        if(momNode->next != (struct node*)-1) {
 
             if (!isFindGlobalPointer) {
                 globalPointerToFirstAdmissibleNode = momNode;
@@ -212,36 +224,6 @@ void updateNextField(struct node** currentNode, struct node** predecessor){
         }
         updateNextField(&(*currentNode) -> right, predecessor);
 
-    }
-
-}
-
-/**
- * deleteNode is used to change the next field of the node to delete
- * @param currentNode the start pointer to the first admissible string
- * @param predecessor the info of the last node
- * @param strToDelete string to delete
- */
-void deleteNode(struct node** currentNode, struct node** predecessor, char* strToDelete){
-
-    if(*currentNode != NULL){
-
-        if(!strncmp((*currentNode)->str, strToDelete, k)){
-
-            //if current node is the root of the tree and i equal to str to delete
-            struct node *momNode = *currentNode;
-
-            if(*currentNode == globalPointerToFirstAdmissibleNode){
-                globalPointerToFirstAdmissibleNode = (*currentNode)->next;
-                momNode->next = -1;
-            }else{
-                (*predecessor)->next = (*currentNode)->next;
-                momNode->next = -1;
-            }
-            return;
-        }
-
-        deleteNode(&(*currentNode)->next, currentNode, strToDelete);
     }
 
 }
@@ -321,6 +303,74 @@ struct node* treeInsert(struct node** root, char* strToInsert, int nextValue){
     return *root;
 }
 
+/******* DICTIONARY METHODS *******************************************************************************/
+
+struct nodeDict* dictInsert(struct nodeDict** root, char keyChar, int number){
+
+    struct nodeDict* nodeToInsert = (struct nodeDict*)malloc(sizeof(struct nodeDict));
+    nodeToInsert->key = keyChar;
+    nodeToInsert->val = number;
+
+    nodeToInsert->right = NULL;
+    nodeToInsert->left = NULL;
+
+    struct nodeDict* fatherOfNodeToInsert = NULL;
+    struct nodeDict* iterableNode = (*root);
+
+    while(iterableNode != NULL){
+
+        fatherOfNodeToInsert = iterableNode;
+
+        if(iterableNode->key == nodeToInsert->key){
+
+            iterableNode->val = number;
+            return *root;
+
+        } else if(iterableNode->key > nodeToInsert->key)
+            iterableNode = iterableNode->left;
+        else
+            iterableNode = iterableNode->right;
+
+    }
+
+    if (fatherOfNodeToInsert == NULL) {
+        return nodeToInsert;
+        //if nodeToInsert is less than father
+    } else if (nodeToInsert->key < fatherOfNodeToInsert->key) {
+        fatherOfNodeToInsert->left = nodeToInsert;
+        //if nodeToInsert is greater than father
+    } else {
+        fatherOfNodeToInsert->right = nodeToInsert;
+    }
+
+    return *root;
+}
+
+int dictSearch(struct nodeDict* root, char charKey){
+
+    if(root == NULL)
+        return (int)NULL;
+
+    if(root->key == charKey)
+        return root->val;
+
+    if(charKey < root->key)
+        return dictSearch(root->left, charKey);
+    else
+        return dictSearch(root->right, charKey);
+
+}
+
+
+void deallocateDict(struct nodeDict* node) {
+
+    if(node != NULL) {
+        deallocateDict(node->left);
+        free(node);
+        deallocateDict(node->right);
+    }
+}
+
 /******* GAME METHODS *******************************************************************************/
 
 /**
@@ -356,88 +406,120 @@ int dimLinkedList() {
     return count;
 }
 
-/**
- * singleCheck used to add string when it reads "inserisci_inizio"
- * This method check the read word with constraints and
- * @return 0 if it respect the constraints or 1 if it doesn't
-*/
-int singleCheck(int noCharBroadcast[], int minOccChar[], int perfectOccChar[], int yesCharIdx[], nodeList* noCharIdx[], char* buf) {
+void walkPerfectOccChar(struct nodeDict** curNode, char* str){
 
-    char *str = (char*)malloc(sizeof(char)*(k+1));
-    strncpy(str, buf, k);
-    str[k] = '\0';
-    //printf("single check: %s\n", str);
+    if ((*curNode) != NULL && stop == 0) {
 
-    int instances[ASCII_TABLE_SIZE];
-    int stop = 0;
-    int i, idx;
-    nodeList* curList = NULL;
+        walkPerfectOccChar(&(*curNode)->left, str);
+        int keyChar = (*curNode)->key;
 
-    //initialize the array
-    for(i = 0; i < ASCII_TABLE_SIZE; i++){
-        instances[i] = 0;
-    }
-        
-    // find instances of each char of str
-    for(i = 0; i < k; i++){
-        instances[(int)str[i]]++;
-    }
-        
+        if (keyChar != '!') {
+            int valChar = (*curNode)->val;
+            int cont = 0;
+            for (int i = 0; i < k; i++)
+                if(str[i] == keyChar)
+                    cont++;
 
-    /*------------------------------*/
-
-    //check yesChar[]
-    for(i = 0; i < k && !stop; i++)
-        if(yesCharIdx[i] != -1)
-            if(yesCharIdx[i] != (int)str[i]){
+            if (cont != valChar) 
                 stop = 1;
-            }
-                
-
-    //check minOccChar
-    for(i = 0; i < ASCII_TABLE_SIZE && !stop; i++){
-        if(minOccChar[i] != 0)
-            if(instances[i] < minOccChar[i]){
-                stop = 1;
-            }
-    }
-
-    //check perfectOccChar[] A
-    for(i = 0; i < ASCII_TABLE_SIZE && !stop; i++){
-        if(perfectOccChar[i] != -1)
-            if(instances[i] != perfectOccChar[i]){
-                stop = 1;
-                // printf("&=%d,(%c) %d(%c) \n", perfectOccChar[i], i, instances[i], i);
-            }
-    }
-
-    //check noCharIdx
-    for(i = 0; i < k && !stop; i++){
-        curList = noCharIdx[i];
-
-        while(curList != NULL && !stop) {
-
-            if(curList->val == str[i])
-                stop = 1;
-            curList = curList -> next;
-
         }
+        
+        if (stop == 0)
+            walkPerfectOccChar(&(*curNode)-> right, str);
+    }
+}
+
+void walkMinOccChar(struct nodeDict** curNode, char* str){
+
+    if ((*curNode) != NULL && stop == 0) {
+
+        walkMinOccChar(&(*curNode)->left, str);
+        int keyChar = (*curNode)->key;
+
+        if (keyChar != '!') {
+            int valChar = (*curNode)->val;
+            int cont = 0;
+            for (int i = 0; i < k; i++)
+                if(str[i] == keyChar)
+                    cont++;
+
+            if (cont < valChar){
+                stop = 1;
+            }
+               
+        }
+        
+        if (stop == 0)
+            walkMinOccChar(&(*curNode)-> right, str);
+    }
+}
+
+
+int singleCheck(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, 
+    struct nodeDict** perfectOccChar, int yesCharIdx[], struct simpleNode* noCharIdx[], char* str) {
+
+    int i;
+    char curChar;
+    stop = 0;
+    // nodeList* curList = NULL;
+
+    /*------------------------------------
+    Constraints (from stronger to weaker)
+    try to chage this order to do better times
+    1) yesCharIdx
+    2) perfectOccChar
+    3) minOccChar
+    4) noCharBroadcast
+    5) noCharIdx
+    ------------------------------------*/
+    
+    // yesCharIdx[]
+    for (i = 0; i < k && !stop; i++) {
+
+        curChar = str[i];
+
+        if (yesCharIdx[i] != -1 && yesCharIdx[i] != (int)curChar)
+            return 1;
+
     }
 
-    //check noCharBroadcast
-    for(i = 0; i < k && !stop; i++){
-        idx = (int)str[i];
-        if(noCharBroadcast[idx] == 1)
-            stop = 1;
+    // perfectOccChar[]
+    walkPerfectOccChar(perfectOccChar, str);
+    if (stop == 1)
+        return 1;
+
+    // minOccChar[]
+    walkMinOccChar(minOccChar, str);
+    if (stop == 1)
+        return 1;
+
+    // noCharIdx[]
+    for (i = 0; i < k && !stop; i++) {
+        
+        curChar = str[i];
+
+        if (simpleNodeSearch(noCharIdx[i], curChar) != NULL)
+            return 1;
+
     }
-    return stop;
+
+    // noCharBroadcast
+    for (i = 0; i < k && !stop; i++) {
+
+        curChar = str[i];
+
+        if (simpleNodeSearch(*noCharBroadcast, curChar) != NULL)
+            return 1;
+    }
+    return 0;
 }
 
 /**
  * checkLinkedList is used to filter the linked list of admissible words
  * for each word that doesn't respect constraints delete function will be called
  */
-void checkLinkedList(int noCharBroadcast[], int minOccChar[], int perfectOccChar[], int yesCharIdx[], nodeList* noCharIdx[]) {
+void checkLinkedList(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, 
+    struct nodeDict** perfectOccChar, int yesCharIdx[], struct simpleNode* noCharIdx[]) {
 
     struct node* curNode = globalPointerToFirstAdmissibleNode;
     int stop;
@@ -445,8 +527,8 @@ void checkLinkedList(int noCharBroadcast[], int minOccChar[], int perfectOccChar
     struct node* mom = NULL;
     while(curNode != NULL) {
 
-        stop = singleCheck(noCharBroadcast, minOccChar, perfectOccChar, yesCharIdx, noCharIdx, curNode->str);
-        //stop = 1;
+        stop = singleCheck(minOccChar, noCharBroadcast, perfectOccChar, yesCharIdx, noCharIdx, curNode->str);
+
         if(stop) {
 
             if(curNode == globalPointerToFirstAdmissibleNode) {
@@ -454,14 +536,14 @@ void checkLinkedList(int noCharBroadcast[], int minOccChar[], int perfectOccChar
                 globalPointerToFirstAdmissibleNode = curNode->next;
                 mom = curNode;
                 curNode = curNode->next;
-                mom->next = -1;
+                mom->next = (struct node*)-1;
 
             } else {
 
                 predecessor->next = curNode->next;
                 mom = curNode;
                 curNode = curNode->next;
-                mom->next = -1;
+                mom->next = (struct node*)-1;
 
             }
         } else {
@@ -478,88 +560,120 @@ void checkLinkedList(int noCharBroadcast[], int minOccChar[], int perfectOccChar
  * @param rString first string r (reference)
  * @param pString second string p (it change every time)
  */
-void match(char* rString, char* pString, int noCharBroadcast[], int yesCharIdx[],
-           nodeList* noCharIdx[], int minOccChar[], int perfectOccChar[]){
+void match(int rN[], int rC[], int rX[], int minOccCharCur[], char* rString, char* pString, struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, 
+    struct nodeDict** perfectOccChar, int yesCharIdx[], struct simpleNode* noCharIdx[]){
 
-    int index;
-    int minOccCharCur[ASCII_TABLE_SIZE];
+
+    // struct nodeDict* rN; // occurrences of each character of r
+    // struct nodeDict* rC; // number of match between r and p of each character
+    // struct nodeDict* rX; // number of occurrences of non match characters
+
+    int asciiVal;
+    int asciiVal2;
     int i;
-    int rN[ASCII_TABLE_SIZE]; //occurrences of each character of r
-    int rC[ASCII_TABLE_SIZE]; //number of match between r and p of each character
-    int rX[ASCII_TABLE_SIZE]; //number of occurrences of non match characters
 
     //initialize the arrays
-    for(i = 0; i < ASCII_TABLE_SIZE; i++) {
-        rN[i] = 0;
-        rC[i] = 0;
-        rX[i] = 0;
-        minOccCharCur[i] = 0;
+    for(i = 0; i < k; i++) {
+        asciiVal = (int)rString[i];
+        rN[asciiVal] = 0;
+        rC[asciiVal] = 0;
+        rX[asciiVal] = 0;
+        minOccCharCur[asciiVal] = 0;
+        asciiVal2 = (int)pString[i];
+        rN[asciiVal2] = 0;
+        rC[asciiVal2] = 0; 
+        rX[asciiVal2] = 0;      
+        minOccCharCur[asciiVal2] = 0;
     }
 
+    //string to print out
     char *res = (char*)malloc(sizeof(char)*(k+1));
     res[k] = '\0';
+
     //initialize rN and rC and find the '+'
     for(i = 0; i < k; i++) {
-        index = (int)(rString[i]);
-        rN[index]++;
+        asciiVal = (int)rString[i];
+        rN[asciiVal]++;
         if(pString[i] == rString[i]) {
             res[i] = '+';
-            rC[index]++;
+            rC[asciiVal]++;
         }
     }
 
     for(i = 0; i < k; i++) {
 
-        int asciiVal = (int)pString[i];
-        //printf("ascci = %d, pstring = %s, i = %d\n", asciiVal, pString, i);
+        asciiVal = (int)pString[i];
+
         if(res[i] == '+') {
+            
             yesCharIdx[i] = asciiVal;
             minOccCharCur[asciiVal]++;
-            // if(minOccCharCur[asciiVal] > 0)
-            //     minOccCharCur[asciiVal]--;
-        }
-        else if(rN[asciiVal] == 0) {
+
+        } else if(rN[asciiVal] == 0) {
+
             //character not present in r
-            //if(rN[(int)pString[i] == 0): res[i] = '/'
+            // '/'  '/'  '/'  '/'  '/'  '/'
             res[i] = '/';
-            noCharBroadcast[asciiVal] = 1;
+            simpleNodeInsert(noCharBroadcast, pString[i]);
+                
+            // noCharBroadcast[asciiVal] = 1;
+
         } else if(rN[asciiVal] - rC[asciiVal] > rX[asciiVal]) {
             //character present in r but not in the correct position
-            //if(rN - rC > rX): res[i] = '|'
+            //  '|' '|' '|' '|' '|' '|' '|' 
             res[i] = '|';
             rX[asciiVal]++;
             minOccCharCur[asciiVal]++;
-            add(asciiVal, &noCharIdx[i]);
+            simpleNodeInsert(&noCharIdx[i], pString[i]);
+            //add(asciiVal, &noCharIdx[i]);
 
         } else if(rN[asciiVal] - rC[asciiVal] <= rX[asciiVal]) {
-            //if(rN - rC <= rX): res[i] = '/'
+            //  '/' '/' '/' '/' '/' '/' '/'
             res[i] = '/';
-            add(asciiVal, &noCharIdx[i]);
-            perfectOccChar[asciiVal] = rN[asciiVal];
+            simpleNodeInsert(&noCharIdx[i], pString[i]);
+            //add(asciiVal, &noCharIdx[i]);
+            dictInsert(perfectOccChar, pString[i], rN[asciiVal]);
         }
     }
-    for(i = 0; i< ASCII_TABLE_SIZE; i++)
-        if(minOccCharCur[i] > minOccChar[i])
-            minOccChar[i] = minOccCharCur[i];
-            
-    //printf("%s (p: %s , r: %s), %d, %d\n", res, pString, rString, minOccChar[109], perfectOccChar[109]);
+
+    int momCur;
+
+    for (i = 0; i < k; i++) {
+        momCur = dictSearch(*minOccChar, pString[i]);
+        asciiVal = (int)pString[i];
+        if (momCur == (int)NULL && minOccCharCur[asciiVal] > 0)
+            dictInsert(minOccChar, pString[i], minOccCharCur[asciiVal]);
+        else
+            if(minOccCharCur[asciiVal] > momCur)
+                dictInsert(minOccChar, pString[i], minOccCharCur[asciiVal]);
+    }
+
     printf("%s\n", res);
 
 }
 
-void initializeConstraintsStruct(int noCharBroadcast[], int minOccChar[], int perfectOccChar[],
-                                 int yesCharIdx[], nodeList* noCharIdx[]) {
+void initializeConstraintsStruct(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, struct nodeDict** perfectOccChar,
+    int yesCharIdx[], struct simpleNode* noCharIdx[]) {
 
-    for(int i = 0; i < k; i++) {
+    deallocateDict(*minOccChar);
+    deallocateSimpleNode(*noCharBroadcast);
+    deallocateDict(*perfectOccChar);
+
+    for (int i = 0; i < k; i++) {
         yesCharIdx[i] = -1;
+       deallocateSimpleNode(noCharIdx[i]);
         noCharIdx[i] = NULL;
+        noCharIdx[i] = simpleNodeInsert(&noCharIdx[i], '!');
     }
 
-    for(int i = 0; i < ASCII_TABLE_SIZE; i++) {
-        noCharBroadcast[i] = -1;
-        minOccChar[i] = 0;
-        perfectOccChar[i] = -1;
-    }
+    *minOccChar = NULL;
+    *noCharBroadcast = NULL;
+    *perfectOccChar = NULL;
+
+    *minOccChar = dictInsert(minOccChar, '!', 0);
+    *noCharBroadcast = simpleNodeInsert(noCharBroadcast, '!');
+    *perfectOccChar = dictInsert(perfectOccChar, '!', 0);
+
 }
 
 /**
@@ -587,9 +701,16 @@ int main() {
     int isFirststampeFiltrate = 1; //1 if stampe filtrate hasn't been read yet
     int stopPrintKO = 0;
     //constraints:
-    int noCharBroadcast[ASCII_TABLE_SIZE];
-    int minOccChar[ASCII_TABLE_SIZE];
-    int perfectOccChar[ASCII_TABLE_SIZE];
+    struct nodeDict* minOccChar = NULL;
+    struct simpleNode* noCharBroadcast = NULL;
+    struct nodeDict* perfectOccChar = NULL;
+    int rN[ASCII_TABLE_SIZE]; //occurrences of each character of r
+    int rC[ASCII_TABLE_SIZE]; //number of match between r and p of each character
+    int rX[ASCII_TABLE_SIZE]; //number of occurrences of non match characters
+    int minOccCharCur[ASCII_TABLE_SIZE]; // to find the min occurences for this comparison
+    // int noCharBroadcast[ASCII_TABLE_SIZE];
+    // int minOccChar[ASCII_TABLE_SIZE];
+    // int perfectOccChar[ASCII_TABLE_SIZE];
     //END LOCAL VARIABLES DECLARATIONS
 
 
@@ -603,9 +724,10 @@ int main() {
 
     //LOCAL VARIABLES DEPENDENT FROM K:
     int yesCharIdx[k];
-    nodeList* noCharIdx[k];
+    struct simpleNode* noCharIdx[k];
+    for (int i = 0; i < k; i++)
+        noCharIdx[i] = NULL;
     //END LOCAL VARIABLES DECLARATIONS
-
 
     //while the input is != from "+nuova_partita" and NULL
     while ((fgets(buffer, MAX_DIM_BUFFER, stdin)) != NULL && firstPhase) {
@@ -622,7 +744,7 @@ int main() {
                 //inorderTreeWalk(&root);
             }
             firstPhase = 0;
-            initializeConstraintsStruct(noCharBroadcast, minOccChar, perfectOccChar, yesCharIdx, noCharIdx);
+            initializeConstraintsStruct(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
 
             //"+stampa_filtrate", print out all the compatible words, from next
         } else if(buffer[0] == '+' && buffer[1] == 's') {
@@ -690,7 +812,7 @@ int main() {
             //"+nuova_partita" => newMatch = 1
             if (buffer[0] == '+' && buffer[1] == 'n') {
 
-                initializeConstraintsStruct(noCharBroadcast, minOccChar, perfectOccChar, yesCharIdx, noCharIdx);
+                initializeConstraintsStruct(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
                 //printf("GP = %d,  %s\n", globalPointerToFirstAdmissibleNode, globalPointerToFirstAdmissibleNode->str);
                 predecessor = treeMinimum(root);
                 globalPointerToFirstAdmissibleNode = predecessor;
@@ -715,13 +837,13 @@ int main() {
                 //"+stampa_filtrate", print out all the compatible words, from next
             } else if (buffer[0] == '+' && buffer[1] == 's') {
 
-                checkLinkedList(noCharBroadcast, minOccChar, perfectOccChar, yesCharIdx, noCharIdx);
+                checkLinkedList(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
                 stampeFiltrate();
 
                 //between "+inserisci_inizio" and "+inserisci_fine"
             } else if (addString){
                 //TODO: if it is the first string, is it possible?
-                treeInsert(&root, buffer, singleCheck(noCharBroadcast, minOccChar, perfectOccChar, yesCharIdx, noCharIdx, buffer));
+                treeInsert(&root, buffer, singleCheck(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx, buffer));
 
                 //comparison between p and r MATCH
             } else {
@@ -734,8 +856,8 @@ int main() {
                     if(!strncmp(rString, pString, k))
                         printf("ok\n");
                     else {
-                        match(rString, pString, noCharBroadcast, yesCharIdx, noCharIdx, minOccChar, perfectOccChar);
-                        checkLinkedList(noCharBroadcast, minOccChar, perfectOccChar, yesCharIdx, noCharIdx);
+                        match(rN, rC, rX, minOccCharCur, rString, pString, &minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
+                        checkLinkedList(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
                         printf("%d\n", dimLinkedList());
                         n--;
                     }
@@ -754,57 +876,9 @@ int main() {
         }
     }
 
-
-
-/**
- * TODO:
- * 1) trovare bug con test3
- * 2) testare fortissimo e trovare altri bug e risolverli
- * Una volta che passo upto18 del gruppo:
- * 3) cambiare strutture dati per vincoli con liste ovunque
- * 4) schiaffare codice su valgrind, vedere bottle neck e ottimizzare
- */
-
-
-
-
-
-
-
-
-//proba
-
-
-
-
-
-
-
-
-
-
-    //inorderTreeWalk(&root);
-/*
-
-
-
-    //initialize list
-    //initialization of global pointer must stay here because the value of predecessor will change
-
-    predecessor = treeMinimum(root);
-    globalPointerToFirstAdmissibleNode = predecessor;
-    initializeNextField(&root, &predecessor);
-
-    //update list
-    //isFindGlobalPointer = 0;
-    //predecessor = treeMinimum(root);
-    //updateNextField(&root, &predecessor);
-    //printf("numbers of nodes = %d", numberOfAddedNodes);
-    //inorderTreeWalk(&root);
-*/
     t = clock() - t;
     double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
     printf("TIME =  %f seconds to execute \n", time_taken);
+
     return 0;
 }
-
