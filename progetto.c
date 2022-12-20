@@ -19,8 +19,8 @@
 #define MAX_DIM_BUFFER 1000
 #define BASE_10 10
 #define ASCII_TABLE_SIZE 124
-/*****************************/
 
+/******* STRUCT ************************************************************************/
 /**
  * This struct represents a single node of BST
  * char str*: string of length k
@@ -62,15 +62,20 @@ struct simpleNode {
 };
 
 
-/******* GLOBAL VARIABLES ************************************************************************/
+/******* GLOBAL VARIABLES *********************************************************************************/
 int numberOfAddedNodes = 0; // numberOfAddedNodes to create array to fill node->next
 struct node* globalPointerToFirstAdmissibleNode; // address of first element of admissible List
 int isFindGlobalPointer; // used to find globalPointer for the first time
-int k; //length of all string
-int stop; //TODO
-/******* SIMPLE NODE METHODS *******************************************************************************/
+int k; // length of all string
+int stop; // stop is 1 when the word doesn't respect constraints any more
 
-// it returns 0 if the string are equals
+/******* SIMPLE NODE METHODS *******************************************************************************/
+/**
+ * myStrnCmp is my version of strncmp() of <string.h>
+ * @param str1 first string
+ * @param str2 second string
+ * @return 0 if the the strings are equal, 1 if they aren't 
+*/
 int myStrnCmp(char* str1, char* str2) {
 
     for (int i = 0; i < k; i++) {
@@ -82,6 +87,12 @@ int myStrnCmp(char* str1, char* str2) {
 
 }
 
+/**
+ * simpleNodeSearch
+ * @param str1 first string
+ * @param str2 second string
+ * @return 0 if the the strings are equal, 1 if they aren't 
+*/
 struct simpleNode* simpleNodeSearch(struct simpleNode* simpleNode, char charKey) {
 
     if(simpleNode == NULL)
@@ -178,14 +189,14 @@ int stringComparison(char* str1, char* str2){
  * @param str string to find inside the tree
  * @return NULL if str is not inside the tree or the address of the node
  */
-struct node* treeSearch(struct node** root, char** str){
+struct node* treeSearch(struct node** root, char* str){
     if(*root == NULL)
         return NULL;
     //strncmp returns 0 if the strings are equals
-    if(!myStrnCmp(*str, (*root)->str))
+    if(!myStrnCmp(str, (*root)->str))
         return *root;
     //if str < x->str
-    if(!stringComparison(*str, (*root)->str))
+    if(!stringComparison(str, (*root)->str))
         return treeSearch(&(*root)->left, str);
     else
         return treeSearch(&(*root)->right, str);
@@ -218,7 +229,6 @@ void initializeNextField(struct node** currentNode, struct node** predecessor){
 
         (*predecessor)->next = *currentNode;
         *predecessor = *currentNode;
-        //printf("curNode = %s (add = %d), address NEXT = %d\n",(*currentNode)->str, (*currentNode), (*currentNode)->next);
 
         initializeNextField(&(*currentNode)->right, predecessor);
     }
@@ -444,16 +454,14 @@ void walkPerfectOccChar(struct nodeDict** curNode, char* str){
         walkPerfectOccChar(&(*curNode)->left, str);
         int keyChar = (*curNode)->key;
 
-        if (keyChar != '!') {
-            int valChar = (*curNode)->val;
-            int cont = 0;
-            for (int i = 0; i < k; i++)
-                if(str[i] == keyChar)
-                    cont++;
+        int valChar = (*curNode)->val;
+        int cont = 0;
+        for (int i = 0; i < k; i++)
+            if(str[i] == keyChar)
+                cont++;
 
-            if (cont != valChar) 
-                stop = 1;
-        }
+        if (cont != valChar) 
+            stop = 1;
         
         if (stop == 0)
             walkPerfectOccChar(&(*curNode)-> right, str);
@@ -467,17 +475,14 @@ void walkMinOccChar(struct nodeDict** curNode, char* str){
         walkMinOccChar(&(*curNode)->left, str);
         int keyChar = (*curNode)->key;
 
-        if (keyChar != '!') {
-            int valChar = (*curNode)->val;
-            int cont = 0;
-            for (int i = 0; i < k; i++)
-                if(str[i] == keyChar)
-                    cont++;
+        int valChar = (*curNode)->val;
+        int cont = 0;
+        for (int i = 0; i < k; i++)
+            if(str[i] == keyChar)
+                cont++;
 
-            if (cont < valChar){
-                stop = 1;
-            }
-               
+        if (cont < valChar){
+            stop = 1;
         }
         
         if (stop == 0)
@@ -534,8 +539,6 @@ int singleCheck(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcas
         return 1;
         
 
-
-
     // noCharBroadcast
     for (i = 0; i < k && !stop; i++) {
 
@@ -547,45 +550,6 @@ int singleCheck(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcas
     return 0;
 }
 
-/**
- * checkLinkedList is used to filter the linked list of admissible words
- * for each word that doesn't respect constraints delete function will be called
- */
-void checkLinkedList(struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, 
-    struct nodeDict** perfectOccChar, int yesCharIdx[], struct simpleNode* noCharIdx[]) {
-
-    struct node* curNode = globalPointerToFirstAdmissibleNode;
-    int stop;
-    struct node* predecessor = NULL;
-    struct node* mom = NULL;
-    while(curNode != NULL) {
-
-        stop = singleCheck(minOccChar, noCharBroadcast, perfectOccChar, yesCharIdx, noCharIdx, curNode->str);
-
-        if(stop) {
-
-            if(curNode == globalPointerToFirstAdmissibleNode) {
-
-                globalPointerToFirstAdmissibleNode = curNode->next;
-                mom = curNode;
-                curNode = curNode->next;
-                mom->next = (struct node*)-1;
-
-            } else {
-
-                predecessor->next = curNode->next;
-                mom = curNode;
-                curNode = curNode->next;
-                mom->next = (struct node*)-1;
-
-            }
-        } else {
-            predecessor = curNode;
-            curNode = curNode->next;
-        }
-    }
-    //printList(globalPointerToFirstAdmissibleNode);
-}
 
 /**
  * match method is used to print result string in output
@@ -593,7 +557,7 @@ void checkLinkedList(struct nodeDict** minOccChar, struct simpleNode** noCharBro
  * @param rString first string r (reference)
  * @param pString second string p (it change every time)
  */
-void match(int rN[], int rC[], int rX[], int minOccCharCur[], char* rString, char* pString, struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, 
+void matchAndCheck(int rN[], int rC[], int rX[], int minOccCharCur[], char* rString, char* pString, struct nodeDict** minOccChar, struct simpleNode** noCharBroadcast, 
     struct nodeDict** perfectOccChar, int yesCharIdx[], struct simpleNode* noCharIdx[]){
 
 
@@ -647,7 +611,8 @@ void match(int rN[], int rC[], int rX[], int minOccCharCur[], char* rString, cha
             //character not present in r
             // '/'  '/'  '/'  '/'  '/'  '/'
             res[i] = '/';
-            simpleNodeInsert(noCharBroadcast, pString[i]);
+
+            *noCharBroadcast = simpleNodeInsert(noCharBroadcast, pString[i]);
                 
             // noCharBroadcast[asciiVal] = 1;
 
@@ -657,15 +622,15 @@ void match(int rN[], int rC[], int rX[], int minOccCharCur[], char* rString, cha
             res[i] = '|';
             rX[asciiVal]++;
             minOccCharCur[asciiVal]++;
-            simpleNodeInsert(&noCharIdx[i], pString[i]);
+            noCharIdx[i] = simpleNodeInsert(&noCharIdx[i], pString[i]);
             //add(asciiVal, &noCharIdx[i]);
 
         } else if(rN[asciiVal] - rC[asciiVal] <= rX[asciiVal]) {
             //  '/' '/' '/' '/' '/' '/' '/'
             res[i] = '/';
-            simpleNodeInsert(&noCharIdx[i], pString[i]);
+            noCharIdx[i] = simpleNodeInsert(&noCharIdx[i], pString[i]);
             //add(asciiVal, &noCharIdx[i]);
-            dictInsert(perfectOccChar, pString[i], rN[asciiVal]);
+            *perfectOccChar = dictInsert(perfectOccChar, pString[i], rN[asciiVal]);
         }
     }
 
@@ -675,13 +640,48 @@ void match(int rN[], int rC[], int rX[], int minOccCharCur[], char* rString, cha
         momCur = dictSearch(*minOccChar, pString[i]);
         asciiVal = (int)pString[i];
         if (momCur == (int)NULL && minOccCharCur[asciiVal] > 0)
-            dictInsert(minOccChar, pString[i], minOccCharCur[asciiVal]);
+            *minOccChar = dictInsert(minOccChar, pString[i], minOccCharCur[asciiVal]);
         else
             if(minOccCharCur[asciiVal] > momCur)
-                dictInsert(minOccChar, pString[i], minOccCharCur[asciiVal]);
+                *minOccChar = dictInsert(minOccChar, pString[i], minOccCharCur[asciiVal]);
     }
 
-    printf("%s\n", res);
+    for (i = 0; i < k; i++)
+        putchar(res[i]);
+    putchar('\n');
+
+    /********************** CHECK LINKED LIST *********************************/
+
+    struct node* curNode = globalPointerToFirstAdmissibleNode;
+    struct node* predecessor = NULL;
+    struct node* mom = NULL;
+
+    while(curNode != NULL) {
+
+        stop = singleCheck(minOccChar, noCharBroadcast, perfectOccChar, yesCharIdx, noCharIdx, curNode->str);
+
+        if(stop) {
+
+            if(curNode == globalPointerToFirstAdmissibleNode) {
+
+                globalPointerToFirstAdmissibleNode = curNode->next;
+                mom = curNode;
+                curNode = curNode->next;
+                mom->next = (struct node*)-1;
+
+            } else {
+
+                predecessor->next = curNode->next;
+                mom = curNode;
+                curNode = curNode->next;
+                mom->next = (struct node*)-1;
+
+            }
+        } else {
+            predecessor = curNode;
+            curNode = curNode->next;
+        }
+    }
 
 }
 
@@ -696,16 +696,11 @@ void initializeConstraintsStruct(struct nodeDict** minOccChar, struct simpleNode
         yesCharIdx[i] = -1;
        deallocateSimpleNode(noCharIdx[i]);
         noCharIdx[i] = NULL;
-        noCharIdx[i] = simpleNodeInsert(&noCharIdx[i], '!');
     }
 
     *minOccChar = NULL;
     *noCharBroadcast = NULL;
     *perfectOccChar = NULL;
-
-    *minOccChar = dictInsert(minOccChar, '!', 0);
-    *noCharBroadcast = simpleNodeInsert(noCharBroadcast, '!');
-    *perfectOccChar = dictInsert(perfectOccChar, '!', 0);
 
 }
 
@@ -716,20 +711,22 @@ void initializeConstraintsStruct(struct nodeDict** minOccChar, struct simpleNode
  * @return 0
  */
 int main() {
+
+    // TODO: delete it
     clock_t t;
     t = clock();
+
     //LOCAL VARIABLES:
     char bufferK[DIM_BUFFER_K]; //buffer to read k
     char buffer[MAX_DIM_BUFFER]; //buffer to read each line of input
     int firstPhase; //when this variable is 1 we are in the first phase
     int addString; //when this variable is 1 we are in the second phase
     struct node* root = NULL; //root of BST
-    int firstString; //to check if it is the first world to add to bst
     struct node* predecessor = NULL; //to fill next field
     int n; //n is the max number of comparison for match with r
     int endGame; //if it is 1 => EOF
     char *rString; //word of reference
-    char *pString; //word to compare
+    // char *pString; //word to compare
     int newMatch; //when is 1 is starting a new match
     int isFirststampeFiltrate = 1; //1 if stampe filtrate hasn't been read yet
     int stopPrintKO = 0;
@@ -741,9 +738,6 @@ int main() {
     int rC[ASCII_TABLE_SIZE]; //number of match between r and p of each character
     int rX[ASCII_TABLE_SIZE]; //number of occurrences of non match characters
     int minOccCharCur[ASCII_TABLE_SIZE]; // to find the min occurences for this comparison
-    // int noCharBroadcast[ASCII_TABLE_SIZE];
-    // int minOccChar[ASCII_TABLE_SIZE];
-    // int perfectOccChar[ASCII_TABLE_SIZE];
     //END LOCAL VARIABLES DECLARATIONS
 
 
@@ -751,76 +745,68 @@ int main() {
     //FIRST PHASE: read K and the list of admissible words, when it reads "+nuova_partita" the SECOND phase begins
     firstPhase = 1;
     addString = 0;
-    firstString = 1;
 
     k = strtol(fgets(bufferK, DIM_BUFFER_K, stdin), NULL, BASE_10);
 
     //LOCAL VARIABLES DEPENDENT FROM K:
     int yesCharIdx[k];
     struct simpleNode* noCharIdx[k];
-    for (int i = 0; i < k; i++)
-        noCharIdx[i] = NULL;
+    for (int idx = 0; idx < k; idx++) 
+        noCharIdx[idx] = NULL;
     //END LOCAL VARIABLES DECLARATIONS
 
     //while the input is != from "+nuova_partita" and NULL
     while ((fgets(buffer, MAX_DIM_BUFFER, stdin)) != NULL && firstPhase) {
 
-        //"+nuova_partita" => second phase
-        if (buffer[0] == '+' && buffer[1] == 'n') {
-            if(isFirststampeFiltrate) {
-                isFirststampeFiltrate = 0;
-                predecessor = treeMinimum(root);
-                globalPointerToFirstAdmissibleNode = predecessor;
-                initializeNextField(&root, &predecessor);
-                treeMax(root)->next = 0;
-                //printf("GlobalPointer = %s, address = %d\n", (globalPointerToFirstAdmissibleNode)->str, globalPointerToFirstAdmissibleNode);
-                //inorderTreeWalk(&root);
-            }
-            firstPhase = 0;
-            initializeConstraintsStruct(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
+        if(buffer[0] == '+') {
 
-            //"+stampa_filtrate", print out all the compatible words, from next
-        } else if(buffer[0] == '+' && buffer[1] == 's') {
+            //"+nuova_partita" => second phase
+            if (buffer[1] == 'n') {
+                if(isFirststampeFiltrate) {
+                    isFirststampeFiltrate = 0;
+                    predecessor = treeMinimum(root);
+                    globalPointerToFirstAdmissibleNode = predecessor;
+                    initializeNextField(&root, &predecessor);
+                    treeMax(root)->next = 0;
+                }
+                firstPhase = 0;
+                initializeConstraintsStruct(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
 
-            //if it is the first time that we read "stampe filtrate"
-            // we initialize the next field of each node, no constraints yet
-            if(isFirststampeFiltrate) {
-                isFirststampeFiltrate = 0;
-                predecessor = treeMinimum(root);
-                globalPointerToFirstAdmissibleNode = predecessor;
-                initializeNextField(&root, &predecessor);
-                treeMax(root)->next = 0;
-                //printf("GlobalPointer = %s, address = %d\n", (globalPointerToFirstAdmissibleNode)->str, globalPointerToFirstAdmissibleNode);
-                //inorderTreeWalk(&root);
-            }
-            stampeFiltrate();
+                //"+stampa_filtrate", print out all the compatible words, from next
+            } else if(buffer[1] == 's') {
 
-            //"+inserisci_inizio" begins the insert of new admissible words
-        } else if (buffer[0] == '+' && buffer[1] == 'i' && buffer[16] == 'o') {
-            addString = 1;
+                //if it is the first time that we read "stampe filtrate"
+                // we initialize the next field of each node, no constraints yet
+                if(isFirststampeFiltrate) {
+                    isFirststampeFiltrate = 0;
+                    predecessor = treeMinimum(root);
+                    globalPointerToFirstAdmissibleNode = predecessor;
+                    initializeNextField(&root, &predecessor);
+                    treeMax(root)->next = 0;
+                }
+                stampeFiltrate();
 
-            //"+inserisci_fine" end of insert
-        } else if (buffer[0] == '+' && buffer[1] == 'i' && buffer[14] == 'e') {
-            addString = 0;
+                //"+inserisci_inizio" begins the insert of new admissible words
+            } else if (buffer[1] == 'i' && buffer[16] == 'o') {
+                addString = 1;
 
-            //add string to BST, after reading "+inserisci_inizio"
+                // "+inserisci_fine" end of insert
+                // (buffer[1] == 'i' && buffer[14] == 'e')
+            } else {
+                addString = 0;
+
+                //add string to BST, after reading "+inserisci_inizio"
+            } 
+
         } else if (addString) {
             //list of new words
 
-            if (firstString) {
-                root = treeInsert(&root, buffer, 0);
-                firstString = 0;
-            } else
-                treeInsert(&root, buffer, 0);
+           root = treeInsert(&root, buffer, 0);
 
             //list of words to add to BST, first part of the programme
         } else {
 
-            if(firstString) {
-                root = treeInsert(&root, buffer, 0);
-                firstString = 0;
-            } else
-                treeInsert(&root, buffer, 0);
+            root = treeInsert(&root, buffer, 0);
         }
     }
 
@@ -842,61 +828,68 @@ int main() {
 
         while ((fgets( buffer, MAX_DIM_BUFFER, stdin)) != NULL && !newMatch) {
 
-            //"+nuova_partita" => newMatch = 1
-            if (buffer[0] == '+' && buffer[1] == 'n') {
+            if (buffer[0] == '+') {
 
-                initializeConstraintsStruct(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
-                //printf("GP = %d,  %s\n", globalPointerToFirstAdmissibleNode, globalPointerToFirstAdmissibleNode->str);
-                predecessor = treeMinimum(root);
-                globalPointerToFirstAdmissibleNode = predecessor;
-                initializeNextField(&root, &predecessor);
-                treeMax(root)->next = 0;
-                //printf("GlobalPointer = %s, address = %d\n", (globalPointerToFirstAdmissibleNode)->str, globalPointerToFirstAdmissibleNode);
-                //inorderTreeWalk(&root);
-                newMatch = 1;
+                //"+nuova_partita" => newMatch = 1
+                if (buffer[1] == 'n') {
+
+                    initializeConstraintsStruct(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
+                    predecessor = treeMinimum(root);
+                    globalPointerToFirstAdmissibleNode = predecessor;
+                    initializeNextField(&root, &predecessor);
+                    treeMax(root)->next = 0;
+                    newMatch = 1;
+
+                //"+stampa_filtrate", print out all the compatible words, from next   
+                } else if (buffer[1] == 's') {
+
+                    stampeFiltrate();
 
                 //"+inserisci_inizio" begins the insert of new admissible words
-            } else if (buffer[0] == '+' && buffer[1] == 'i' && buffer[16] == 'o'){
-                addString = 1;
+                } else if (buffer[1] == 'i' && buffer[16] == 'o'){
+                    addString = 1;
 
-                //"+inserisci_fine" end of insert
-            } else if (buffer[0] == '+' && buffer[1] == 'i' && buffer[14] == 'e'){
+                    //"+inserisci_fine" end of insert
+                } else {
 
-                addString = 0;
-                isFindGlobalPointer = 0;
-                predecessor = treeMinimum(root);
-                updateNextField(&root, &predecessor);
+                    addString = 0;
+                    isFindGlobalPointer = 0;
+                    predecessor = treeMinimum(root);
+                    updateNextField(&root, &predecessor);
 
-                //"+stampa_filtrate", print out all the compatible words, from next
-            } else if (buffer[0] == '+' && buffer[1] == 's') {
-
-                // checkLinkedList(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
-                stampeFiltrate();
-
-                //between "+inserisci_inizio" and "+inserisci_fine"
+                }
+            //between "+inserisci_inizio" and "+inserisci_fine"
             } else if (addString){
-                //TODO: if it is the first string, is it possible?
+
                 treeInsert(&root, buffer, singleCheck(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx, buffer));
 
                 //comparison between p and r MATCH
             } else {
 
-                pString = (char*)malloc(sizeof(char)*(k+1));
-                strncpy(pString, buffer, k);
-                pString[k] = '\0';
+                if(treeSearch(&root, buffer) != 0){// 0 or NULL TODO
 
-                if(treeSearch(&root, &pString) != 0){// 0 or NULL TODO
-                    // if(!strncmp(rString, pString, k))
-                    if (!myStrnCmp(rString, pString))
-                        printf("ok\n");
-                    else {
-                        match(rN, rC, rX, minOccCharCur, rString, pString, &minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
-                        checkLinkedList(&minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
+                    if (!myStrnCmp(rString, buffer)) {
+                        putchar('o');
+                        putchar('k');
+                        putchar('\n');
+                    } else {
+                        matchAndCheck(rN, rC, rX, minOccCharCur, rString, buffer, &minOccChar, &noCharBroadcast, &perfectOccChar, yesCharIdx, noCharIdx);
                         printf("%d\n", dimLinkedList());
                         n--;
                     }
-                } else
-                    printf("not_exists\n");
+                } else {
+                    putchar('n');
+                    putchar('o');
+                    putchar('t');
+                    putchar('_');
+                    putchar('e');
+                    putchar('x');
+                    putchar('i');
+                    putchar('s');
+                    putchar('t');
+                    putchar('s');
+                    putchar('\n');
+                }
 
             }
         }
@@ -905,15 +898,17 @@ int main() {
 
         //KO (we reached n comparison)
         if(n == 0 && !stopPrintKO) {
-            printf("ko\n");
+            putchar('k');
+            putchar('o');
+            putchar('\n');
             stopPrintKO = 1;
         }
     }
 
+    // TODO: delete it
     t = clock() - t;
     double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
     printf("TIME =  %f seconds to execute \n", time_taken);
-
     return 0;
 }
 
@@ -922,4 +917,5 @@ int main() {
  * 2) cambiare sequenza check in singlecheck
  * 3) verificare se si rientra nei limiti di memoria (se no allocare in blocchi)
  * 4) vedere con valgrind dov'è il bottle neck, ragionarci e provare a velocizzarlo
+ * 5) getchar unlocked e puts (provare fread se disperato)
 */
