@@ -1,13 +1,35 @@
-/**************************************************************************************
-
-░█▀█░█▀▄░█▀█░█░█░█▀█░░░█▀▀░▀█▀░█▀█░█▀█░█░░░█▀▀░░░█▀█░█▀█░▀█▀░░░▀▀▄░▀▀▄
-░█▀▀░█▀▄░█░█░▀▄▀░█▀█░░░█▀▀░░█░░█░█░█▀█░█░░░█▀▀░░░█▀█░█▀▀░░█░░░░▄▀░░▄▀░
-░▀░░░▀░▀░▀▀▀░░▀░░▀░▀░░░▀░░░▀▀▀░▀░▀░▀░▀░▀▀▀░▀▀▀░░░▀░▀░▀░░░▀▀▀░░░▀▀▀░▀▀▀
-░█▀▄░█▀█░█▀▄░▀█▀░█▀█░░░█▀█░█▄█░█▀█░█▀▄░█▀█░█▀▄░▀█▀
-░█░█░█▀█░█▀▄░░█░░█░█░░░█▀█░█░█░█▀█░█░█░█░█░█▀▄░░█░
-░▀▀░░▀░▀░▀░▀░▀▀▀░▀▀▀░░░▀░▀░▀░▀░▀░▀░▀▀░░▀▀▀░▀░▀░▀▀▀
-
-***************************************************************************************/
+/**
+ * Project Name: WordChecker
+ * Author: Amadori Dario
+ * Date: 2022
+ * Course: Algorithms and Principles of Computer Engineering
+ * Institution: Politecnico di Milano
+ * Academic Year: 2022
+ * Description:
+ *  The aim of this year's project is to develop a system named WordChecker, designed to
+ *  validate the correspondence between the letters of two words of equal length. This system
+ *  operates on words composed of lowercase and uppercase alphabetic characters (a-z, A-Z),
+ *  numeric digits (0-9), and the symbols '-' (dash) and '_' (underscore).
+ *
+ *  WordChecker functions by reading from standard input a series of instructions and data,
+ *  including a value 'k' representing the length of the words to be processed, and an arbitrary
+ *  sequence of admissible words of length 'k', ensuring no duplicates. Following the input of
+ *  admissible words, the system reads sequences of "matches", marked by the command '+new_match',
+ *  each involving a reference word of length 'k' (assumed to be among the admissible words),
+ *  a maximum number 'n' of words to be compared with the reference, and a sequence of words
+ *  of length 'k' to compare against the reference word.
+ *
+ *  Additionally, the system can receive commands '+insert_start' and '+insert_end' to add new
+ *  admissible words of length 'k' to the pool, with the assumption of no duplicate entries.
+ *  The '+print_filtered' command may appear to trigger specific output actions during or between
+ *  matches.
+ *
+ * Key Features:
+ *  - Validates letter correspondence between words of equal length.
+ *  - Manages an expandable set of admissible words.
+ *  - Processes sequences of matches with reference and comparison words.
+ *  - Allows dynamic addition of admissible words to the system.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -904,18 +926,11 @@ int main() {
             stopPrintKO = 1;
         }
     }
-
-    // TODO: delete it
+    //calculate execution time
     t = clock() - t;
     double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
     printf("TIME =  %f seconds to execute \n", time_taken);
     return 0;
 }
 
-/** TODO:
- * 1) creare variabili global isFirst di tutte le strutture dati per i vincoli
- * 2) cambiare sequenza check in singlecheck
- * 3) verificare se si rientra nei limiti di memoria (se no allocare in blocchi)
- * 4) vedere con valgrind dov'è il bottle neck, ragionarci e provare a velocizzarlo
- * 5) getchar unlocked e puts (provare fread se disperato)
-*/
+
